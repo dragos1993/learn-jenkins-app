@@ -83,6 +83,7 @@ pipeline {
                 }
             }
         }
+
         stage('Deploy staging') {
             agent {
                 docker {
@@ -99,11 +100,11 @@ pipeline {
                     node_modules/.bin/netlify deploy --dir=build --json > deploy-output.json
                     node_modules/.bin/node-jq -r '.deploy_url' deploy-output.json
                 '''
-            }
                 script {
-                    env.STAGING_URL = sh(script: "node_modules/.bin/node-jq -r '.deploy_url' deploy-output.json", returnStdout: true)
+                    env.STAGING_URL = sh(script: "node_modules/.bin/node-jq -r '.deploy_url' deploy-output.json", returnStdout: true).trim()
                 }
-            }   
+            }
+        }
 
         stage('staging E2E') {
             agent {
@@ -135,11 +136,13 @@ pipeline {
                     ])
                 }
             }
+        }
+
         stage('Approval') {
             steps {
                 timeout(time: 15, unit: 'MINUTES') {
-                    input message: 'Do you wish to deploy to production?', ok: 'Yes, i am sure!'
-                    }
+                    input message: 'Do you wish to deploy to production?', ok: 'Yes, I am sure!'
+                }
             }
         }
 
@@ -185,7 +188,7 @@ pipeline {
                         keepAll: false,
                         reportDir: 'playwright-report',
                         reportFiles: 'index.html',
-                        reportName: 'Prod E2E ',
+                        reportName: 'Prod E2E',
                         reportTitles: '',
                         useWrapperFileDirectly: true
                     ])
@@ -193,5 +196,4 @@ pipeline {
             }
         }
     }
-}
 }
