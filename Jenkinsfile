@@ -1,4 +1,5 @@
 pipeline {
+    
     agent any
 
     environment {
@@ -51,6 +52,12 @@ pipeline {
             }
         }
         stage('Deploy in Azure') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/azure-cli'
+                    reuseNode true
+                }
+            }
             environment {
                 AZURE_CLIENT_ID     = credentials('azure-client-id')
                 AZURE_CLIENT_SECRET = credentials('azure-client-secret')
