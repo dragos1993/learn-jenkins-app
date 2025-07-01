@@ -51,29 +51,33 @@ pipeline {
             }
         }
 
-        stage('Deploy staging') {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                    reuseNode true
-                }
-            }
-            steps {
-                sh '''
-                    npm install netlify-cli@20.1.1 node-jq
-                    node_modules/.bin/netlify --version
-                    echo "Deploying to staging. Site ID: $NETLIFY_SITE_ID"
-                    node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --dir=build --json > deploy-output.json
-                    node_modules/.bin/node-jq -r '.deploy_url' deploy-output.json
-                '''
-                script {
-                    env.STAGING_URL = sh(script: "node_modules/.bin/node-jq -r '.deploy_url' deploy-output.json", returnStdout: true).trim()
-                }
-            }
-        }
+        stage('Deploy Azure') {
+    environment {
+        AZURE_SP_JSON = credentials('jenkins-sp')
+    }
+    steps {
+        script {
+            writeFile file: 'azure.json', text: env.AZURE_SP_JSON
 
-        stage('Deploy prod') {
+            def azure = readJSON file: 'azure.json'
+
+            sh """
+            az login --service-principal \\
+              -u ${azure.clientId} \\
+              -p ${azure.clientSecret} \\
+              --tenant ${azure.tenantId}
+
+            az storage blob upload-batch \\
+              --account-name jenkinsapp \\
+              --destination \$web \\
+              --source build \\
+              --overwrite
+            """
+        }
+    }
+}
+
+        stage('Deploy in Netlify') {
             agent {
                 docker {
                     image 'node:18-alpine'
