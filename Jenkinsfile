@@ -63,11 +63,12 @@ pipeline {
                 AZURE_CLIENT_SECRET = credentials('azure-client-secret')
                 AZURE_TENANT_ID     = credentials('azure-tenant-id')
                 AZURE_STORAGE_ACCOUNT = 'jenkinsapp' // Replace with your Azure Storage account
+                AZURE_CONFIG_DIR = './.azure' //
             }
             steps {
                 sh '''
                     echo "Logging into Azure..."
-                    az login --service-principal \\
+                    AZURE_CONFIG_DIR=./.azure az login --service-principal \\
                     -u $AZURE_CLIENT_ID \\
                     -p $AZURE_CLIENT_SECRET \\
                     --tenant $AZURE_TENANT_ID
