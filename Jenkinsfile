@@ -69,6 +69,9 @@ pipeline {
                 sh '''
                     echo "Logging into Azure..."
                     mkdir -p .azure
+                    echo "Using tenant ID: $AZURE_TENANT_ID"
+                    echo "Using secret ID: $AZURE_CLIENT_SECRET"
+                    echo "Using client ID: $AZURE_CLIENT_ID"
                     AZURE_CONFIG_DIR=./.azure az login --service-principal \\
                     -u $AZURE_CLIENT_ID \\
                     -p $AZURE_CLIENT_SECRET \\
