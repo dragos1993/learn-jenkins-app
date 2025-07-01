@@ -67,8 +67,8 @@ pipeline {
 
                     echo "Uploading build folder to Azure Blob..."
                     az storage blob upload-batch \\
-                    --account-name $jenkinsapp \\
-                    --destination \$web \\
+                    --account-name jenkinsapp \\
+                    --destination \web \\
                     --source build \\
                     --overwrite
                 '''
