@@ -68,6 +68,7 @@ pipeline {
             steps {
                 sh '''
                     echo "Logging into Azure..."
+                    mkdir -p .azure
                     AZURE_CONFIG_DIR=./.azure az login --service-principal \\
                     -u $AZURE_CLIENT_ID \\
                     -p $AZURE_CLIENT_SECRET \\
