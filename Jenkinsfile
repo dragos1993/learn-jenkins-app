@@ -65,16 +65,9 @@ pipeline {
                     -p $AZURE_CLIENT_SECRET \\
                     --tenant $AZURE_TENANT_ID
 
-                    echo "Enabling static website hosting if needed..."
-                    az storage blob service-properties update \\
-                    --account-name $AZURE_STORAGE_ACCOUNT \\
-                    --static-website \\
-                    --index-document index.html \\
-                    --404-document index.html
-
                     echo "Uploading build folder to Azure Blob..."
                     az storage blob upload-batch \\
-                    --account-name $AZURE_STORAGE_ACCOUNT \\
+                    --account-name $jenkinsapp \\
                     --destination \$web \\
                     --source build \\
                     --overwrite
