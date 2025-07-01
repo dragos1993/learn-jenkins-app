@@ -50,33 +50,37 @@ pipeline {
                 }
             }
         }
+        stage('Deploy in Azure') {
+            environment {
+                AZURE_CLIENT_ID     = credentials('azure-client-id')
+                AZURE_CLIENT_SECRET = credentials('azure-client-secret')
+                AZURE_TENANT_ID     = credentials('azure-tenant-id')
+                AZURE_STORAGE_ACCOUNT = 'jenkinsapp' // Replace with your Azure Storage account
+            }
+            steps {
+                sh '''
+                    echo "Logging into Azure..."
+                    az login --service-principal \\
+                    -u $AZURE_CLIENT_ID \\
+                    -p $AZURE_CLIENT_SECRET \\
+                    --tenant $AZURE_TENANT_ID
 
-        stage('Deploy Azure') {
-    environment {
-        AZURE_SP_JSON = credentials('jenkins-sp')
-    }
-    steps {
-        script {
-            writeFile file: 'azure.json', text: env.AZURE_SP_JSON
+                    echo "Enabling static website hosting if needed..."
+                    az storage blob service-properties update \\
+                    --account-name $AZURE_STORAGE_ACCOUNT \\
+                    --static-website \\
+                    --index-document index.html \\
+                    --404-document index.html
 
-            def azure = readJSON file: 'azure.json'
-
-            sh """
-            az login --service-principal \\
-              -u ${azure.clientId} \\
-              -p ${azure.clientSecret} \\
-              --tenant ${azure.tenantId}
-
-            az storage blob upload-batch \\
-              --account-name jenkinsapp \\
-              --destination \$web \\
-              --source build \\
-              --overwrite
-            """
+                    echo "Uploading build folder to Azure Blob..."
+                    az storage blob upload-batch \\
+                    --account-name $AZURE_STORAGE_ACCOUNT \\
+                    --destination \$web \\
+                    --source build \\
+                    --overwrite
+                '''
+            }
         }
-    }
-}
-
         stage('Deploy in Netlify') {
             agent {
                 docker {
