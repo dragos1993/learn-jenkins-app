@@ -51,44 +51,55 @@ pipeline {
                 }
             }
         }
-        stage('Deploy in Azure') {
+        stage('Azure Login') {
             agent {
                 docker {
-                    image 'mcr.microsoft.com/azure-cli'
-                    reuseNode true
+                image 'mcr.microsoft.com/azure-cli'
+                args '-u root'
                 }
             }
-            environment {
-                AZURE_CLIENT_ID     = credentials('azure-client-id')
-                AZURE_CLIENT_SECRET = credentials('azure-client-secret')
-                AZURE_TENANT_ID     = credentials('azure-tenant-id')
-                AZURE_STORAGE_ACCOUNT = 'jenkinsapp' // Replace with your Azure Storage account
-                AZURE_CONFIG_DIR = './.azure' //
+            steps {
+                withCredentials([azureServicePrincipal(
+                credentialsId: 'jenkins-static-swa-sp',
+                clientIdVariable: 'AZURE_CLIENT_ID',
+                clientSecretVariable: 'AZURE_CLIENT_SECRET',
+                tenantIdVariable: 'AZURE_TENANT_ID',
+                subscriptionIdVariable: 'AZURE_SUBSCRIPTION_ID'
+                )]) {
+                sh '''
+                    echo "Installing SWA CLI via npm"
+                    npm install -g @azure/static-web-apps-cli || true
+
+                    echo "Azure Login"
+                    az login --service-principal \
+                    -u $AZURE_CLIENT_ID \
+                    -p $AZURE_CLIENT_SECRET \
+                    -t $AZURE_TENANT_ID
+
+                    az account set --subscription $AZURE_SUBSCRIPTION_ID
+                '''
+                }
+            }
+        }
+        stage('Install and Deploy SWA') {
+            agent {
+                docker {
+                image 'node:18'
+                args '-u root'
+                }
             }
             steps {
                 sh '''
-                    echo "Logging into Azure..."
-                    mkdir -p .azure
+                mkdir -p ~/.npm-global
+                npm config set prefix '~/.npm-global'
+                export PATH=~/.npm-global/bin:$PATH
+                npm install -g @azure/static-web-apps-cli
 
-                    echo "Client ID: $AZURE_CLIENT_ID" > debug.txt
-                    echo "Tenant ID: $AZURE_TENANT_ID" >> debug.txt
-                    echo "Secret: $AZURE_CLIENT_SECRET" >> debug.txt
-                    cat debug.txt
-                    
-                    AZURE_CONFIG_DIR=./.azure az login --service-principal \\
-                    -u $AZURE_CLIENT_ID \\
-                    -p $AZURE_CLIENT_SECRET \\
-                    --tenant $AZURE_TENANT_ID
-
-                    echo "Uploading build folder to Azure Blob..."
-                    az storage blob upload-batch \\
-                    --account-name $AZURE_STORAGE_ACCOUNT \\
-                    --destination \$web \\
-                    --source build \\
-                    --overwrite
+                echo "Deploying to Azure Static Web App"
+                swa deploy --app-location public --env production --deployment-token $DEPLOYMENT_TOKEN
                 '''
-            }
         }
+}
         stage('Deploy in Netlify') {
             agent {
                 docker {
