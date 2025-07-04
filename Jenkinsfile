@@ -100,11 +100,6 @@ pipeline {
                 swa deploy --app-location . --output-location build --env production --deployment-token $DEPLOYMENT_TOKEN
                 '''
         }
-            post {
-                success {
-                    archiveArtifacts artifacts: 'src/**', fingerprint: true
-                }
-            }
 }
         stage('Deploy in Netlify') {
             agent {
