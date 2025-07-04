@@ -102,7 +102,7 @@ pipeline {
         }
             post {
                 success {
-                    archiveArtifacts artifacts: 'app/build/**', fingerprint: true
+                    archiveArtifacts artifacts: 'src/**', fingerprint: true
                 }
             }
 }
