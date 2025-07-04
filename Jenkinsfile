@@ -97,7 +97,7 @@ pipeline {
                 npm install -g @azure/static-web-apps-cli
 
                 echo "Deploying to Azure Static Web App"
-                swa deploy --app-location public --env production --deployment-token $DEPLOYMENT_TOKEN
+                swa deploy --app-location src --env production --deployment-token $DEPLOYMENT_TOKEN
                 '''
         }
 }
