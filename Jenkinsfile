@@ -95,6 +95,9 @@ pipeline {
                 npm config set prefix '~/.npm-global'
                 export PATH=~/.npm-global/bin:$PATH
                 npm install -g @azure/static-web-apps-cli
+                echo "Installing dependencies and building"
+                npm ci
+                npm run build
 
                 echo "Deploying to Azure Static Web App"
                 swa deploy --app-location . --output-location build --env production --deployment-token $DEPLOYMENT_TOKEN
@@ -102,7 +105,7 @@ pipeline {
         }
             post {
                 success {
-                    archiveArtifacts artifacts: 'src/**', fingerprint: true
+                    archiveArtifacts artifacts: 'build/**', fingerprint: true
                 }
             }
 }
